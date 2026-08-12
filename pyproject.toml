@@ -1,0 +1,33 @@
+[project]
+name = "gridkit"
+version = "0.1.0"
+description = "A simple, extensible toolkit for power-grid modeling, simulation, and control."
+readme = "README.md"
+license = "MIT"
+authors = [
+    { name = "fluffyfarm", email = "sanseeha.p@gmail.com" },
+]
+requires-python = ">=3.11"
+dependencies = [
+    "pandapower>=2.14.0",
+    "grid2op>=1.10.0",
+    "lightsim2grid",
+    "plotly",
+    "numpy",
+    "matplotlib>=3.11.1",
+    "nbformat>=4.2.0",
+    "xlsxwriter",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "openpyxl>=3.1.5",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/gridkit"]
