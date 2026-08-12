@@ -116,4 +116,6 @@ src/gridkit/
   plotting.py       simple_plotly / pf_res_plotly wrappers
 tests/              pytest suite
 examples/demo.py    end-to-end demo (also shows the diagnostics report)
+examples/benchmark_backends.py     pandapower vs. lightsim2grid timings on the 9241-bus case
+examples/make_example_networks.py  regenerate the example_network_*.xlsx workbooks
 ```
