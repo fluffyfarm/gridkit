@@ -101,6 +101,26 @@ class Network:
     def ext_grids(self) -> pd.DataFrame:
         return self._net.ext_grid
 
+    @property
+    def res_bus(self) -> pd.DataFrame:
+        return self._net.res_bus
+
+    @property
+    def res_line(self) -> pd.DataFrame:
+        return self._net.res_line
+
+    @property
+    def res_load(self) -> pd.DataFrame:
+        return self._net.res_load
+
+    @property
+    def res_gen(self) -> pd.DataFrame:
+        return self._net.res_gen
+
+    @property
+    def res_ext_grid(self) -> pd.DataFrame:
+        return self._net.res_ext_grid
+
     def bus_index(self, bus: object) -> int:
         """Resolve a bus name (or raw index) to its pandapower index."""
         return self._resolve(self._buses, "bus", bus)
