@@ -265,9 +265,56 @@ class Network:
         in_service: bool = True,
         **kwargs,
     ) -> str:
+        """Add a load to ``bus`` (referenced by name or index).
+
+        If the bus already has a load, its values are updated in place
+        instead of creating a new row in the load table.
+        """
+        idx = self._find_load_on_bus(self.bus_index(bus))
+        if idx is None:
+            idx = pp.create_load(
+                self._net,
+                self.bus_index(bus),
+                p_mw=p_mw,
+                q_mvar=q_mvar,
+                name=name,
+                scaling=scaling,
+                in_service=in_service,
+                **kwargs,
+            )
+            self._register("load", name, idx)
+            return name
+        self._set_load_values(idx, name=name, p_mw=p_mw, q_mvar=q_mvar,
+                              scaling=scaling, in_service=in_service, **kwargs)
+        return name
+
+    def update_load(
+        self,
+        bus: object,
+        p_mw: float = 0.0,
+        q_mvar: float = 0.0,
+        scaling: float = 1.0,
+        in_service: bool = True,
+        **kwargs,
+    ) -> str:
+        """Update the load attached to ``bus``, creating one if needed.
+
+        Repeated calls overwrite the existing row instead of appending a new
+        one, so the load table never grows over time. Mainly useful in
+        quasi-dynamic simulations.
+        """
+        idx = self._find_load_on_bus(self.bus_index(bus))
+        if idx is not None:
+            self._set_load_values(idx, p_mw=p_mw, q_mvar=q_mvar,
+                                  scaling=scaling, in_service=in_service, **kwargs)
+            return self._net.load.at[idx, "name"]
+        bus_idx = self.bus_index(bus)
+        name = self._net.bus.at[bus_idx, "name"]
+        if not isinstance(name, str) or not name.strip():
+            name = f"bus_{bus_idx}"
         idx = pp.create_load(
             self._net,
-            self.bus_index(bus),
+            bus_idx,
             p_mw=p_mw,
             q_mvar=q_mvar,
             name=name,
@@ -277,6 +324,36 @@ class Network:
         )
         self._register("load", name, idx)
         return name
+
+    def _find_load_on_bus(self, bus_idx: int) -> Optional[int]:
+        existing = self._net.load.loc[self._net.load["bus"] == bus_idx]
+        if len(existing) == 0:
+            return None
+        return int(existing.index[0])
+
+    def _set_load_values(
+        self,
+        idx: int,
+        name: Optional[str] = None,
+        p_mw: float = 0.0,
+        q_mvar: float = 0.0,
+        scaling: float = 1.0,
+        in_service: bool = True,
+        **kwargs,
+    ) -> None:
+        if name is not None:
+            old_name = self._net.load.at[idx, "name"]
+            if isinstance(old_name, str) and old_name != name:
+                if self._loads.get(old_name) == idx:
+                    self._loads.pop(old_name, None)
+            self._net.load.at[idx, "name"] = name
+            self._register("load", name, idx)
+        self._net.load.at[idx, "p_mw"] = p_mw
+        self._net.load.at[idx, "q_mvar"] = q_mvar
+        self._net.load.at[idx, "scaling"] = scaling
+        self._net.load.at[idx, "in_service"] = in_service
+        for k, v in kwargs.items():
+            self._net.load.at[idx, k] = v
 
     def add_gen(
         self,
