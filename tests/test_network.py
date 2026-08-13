@@ -131,3 +131,46 @@ def test_no_slack_diverges_and_reports():
     res = net.runpp()
     assert not res.converged
     assert net.converged is False
+
+
+def test_add_load_same_bus_updates_in_place():
+    net = build_simple_net()
+    n_rows_before = len(net.loads)
+    net.add_load("LOAD", bus="LOAD_01", p_mw=0.09, q_mvar=0.02)
+    assert len(net.loads) == n_rows_before
+    assert len(net.net.load) == 1
+    assert net.loads.iloc[0]["p_mw"] == 0.09
+    assert net.loads.iloc[0]["q_mvar"] == 0.02
+    assert net.load_index("LOAD") == 0
+    res = net.runpp()
+    assert res.converged
+
+
+def test_add_load_same_bus_by_index_updates_in_place():
+    net = build_simple_net()
+    idx = net.bus_index("LOAD_01")
+    net.add_load("LOAD", bus=idx, p_mw=0.12)
+    assert len(net.net.load) == 1
+    assert net.net.load.iloc[0]["p_mw"] == 0.12
+
+
+def test_update_load_reuses_row():
+    net = build_simple_net()
+    for p in (0.01, 0.05, 0.1, 0.2):
+        name = net.update_load(bus="LOAD_01", p_mw=p, q_mvar=0.02)
+    assert len(net.net.load) == 1
+    assert name == "LOAD"
+    assert net.net.load.iloc[0]["p_mw"] == 0.2
+    assert net.runpp().converged
+
+
+def test_update_load_creates_when_missing():
+    net = gk.create_empty_network()
+    net.add_bus("A", vn_kv=0.4)
+    name = net.update_load(bus="A", p_mw=0.05)
+    assert name == "A"
+    assert len(net.net.load) == 1
+    assert net.load_index("A") == 0
+    name2 = net.update_load(bus="A", p_mw=0.08)
+    assert name2 == "A"
+    assert len(net.net.load) == 1
